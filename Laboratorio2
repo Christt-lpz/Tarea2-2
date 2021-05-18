@@ -1,0 +1,232 @@
+1. ¿Qué mes es el que tiene la mayor demanda?
+```{r}
+
+library(plyr)
+library(dplyr)
+
+#lectura de archivo
+lectura <- read.csv("hour.csv")
+View(lectura)
+
+##agrupacion po año y mes 
+agrupacion <-lectura %>% 
+  group_by(yr, mnth) %>% summarise(Total =sum(cnt))
+#agrupacion
+
+##Obtiene el valor maximo
+ValorMaximo<-max(agrupacion$Total) 
+#ValorMaximo
+
+#Obtiene todos los valore maximos 
+ValoresMaximos <- agrupacion %>% filter(Total==ValorMaximo)
+#ValoresMaximos
+
+Valor <- ValoresMaximos %>%
+  mutate(
+    yr= ifelse(yr %in% 0, 2011,
+                    ifelse(yr %in% 1, 2012)))
+
+#Presenta todos los años y meses que tiene el mismo valor
+select (Valor,yr, mnth, Total)
+
+
+
+
+2. ¿Qué rango de hora es la de mayor demanda?
+
+```{r}
+
+#horas de mas pedidos 
+agrupacionH <-lectura %>% 
+  group_by(hr) %>% summarise(Total =sum(cnt))
+
+agrupacionH
+
+TablaFHora <- agrupacionH %>% mutate(
+          Hora_Rango =  cut( hr, breaks = c(0,3,6,9,12,15,18,21,24), dig.lab = 2)) %>% 
+          group_by(Hora_Rango) %>% summarise(Total= sum(Total))
+
+
+MaximoH <- max(TablaFHora$Total)
+RegistroH<- TablaFHora %>% filter(Total==MaximoH)
+RegistroH
+
+
+
+3. ¿Qué temporada es la mas alta?
+```{r}
+agrupacionSeason <- lectura %>%
+  group_by(season) %>% summarise (Total= sum(cnt))
+
+MaximoSeason <- max(agrupacionSeason$Total)
+RegistroSeason <- agrupacionSeason %>% filter ( Total==MaximoSeason)
+
+RegistroSeasonC <- RegistroSeason %>%
+  mutate(
+    
+    season =  ifelse(season %in% 1, "sprint",
+                     ifelse(season %in% 2, "summer",
+                            ifelse (season %in% 3, "fall",
+                                ifelse(season %in% 4, "winter")))
+                     )
+  )
+
+##Temporada mas alta 
+RegistroSeasonC
+```
+
+
+
+
+4. ¿A que temperatura baja la demanda?
+
+```{r}
+
+lectura %>%
+  ggplot (aes(x=temp, y=..density..))+
+  geom_density(col='blue', lwd=1, fill ="cyan")+
+  theme_minimal()
+
+##Total de pedidos
+N <-  lectura %>%  summarise(Total=sum(cnt))
+
+#Registros por  temperatura 
+AgrupacionTemp <-  lectura %>% group_by(temp) %>% summarise(Total=sum(cnt))
+
+
+TAblaFTemp <- AgrupacionTemp %>% mutate(
+          Temp_Rango =  cut( temp, breaks = 10, dig.lab = 2)) %>% 
+          group_by(Temp_Rango) %>% summarise(Total= sum(Total))
+
+#rando de frecuencia con menos  pedido  
+demandaM<- min(TAblaFTemp$Total)
+
+#el rando de tempera con menor  pedido es :  
+Pedidos <- TAblaFTemp %>% filter(Total==demandaM)
+Pedidos
+
+```
+
+
+
+5. ¿A que humedad baja la demanda?
+```{r}
+
+
+#Registros por  humedad 
+AgrupacionHumedad <-  lectura %>% group_by(hum) %>% summarise(Total=sum(cnt))
+AgrupacionHumedad
+
+tablaFH<- AgrupacionHumedad %>% mutate(
+      Rango_Humedad =  cut(hum, breaks=c(0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1),  dig.lab = 2))%>%
+      group_by(Rango_Humedad) %>% summarise(Total= sum(Total))
+
+#rando de frecuencia con menos  pedido  cuando la humedad  es 
+demandaM<- min(tablaFH$Total)
+Pedidos <- tablaFH %>% filter(Total==demandaM)
+Pedidos
+```
+
+
+7. Mueste una gráfica de la densidad de rentas.
+
+```{r}
+lectura %>%
+  ggplot (aes(x=cnt, y=..density..))+
+  geom_density(col='blue', lwd=1, fill ="cyan")+
+  theme_minimal()
+  
+  ```
+  
+  
+  8. Determine promedio de personas que rentan bicicletas y están
+registradas.
+```{r}
+
+#Se saca el promedio de renta de bisiclesta  de personas registradas  por dia ya que no se especifica con respecto a que
+
+Dias <- lectura %>% group_by(dteday) %>% summarise(n())
+TotalDias<- count(Dias)
+TotalRenta <- sum(lectura$registered)
+PromedioRentaDia<-  ( TotalRenta/TotalDias)
+PromedioRentaDia
+
+
+```
+
+
+9. Determine la mediana de personas que rentan bicicletas y no están
+registradas.
+
+```{r}
+
+Mediana<- median(lectura$casual)
+##La mediana es 
+Mediana
+
+```
+
+
+10. Deterimne la renta total, renta promedio por cada tipo de
+condición climática.
+
+```{r}
+
+#no indica con respecto a que es el promdio si es  promedio entre los  4 registros, entre los dias, horas, etc.
+
+#se obtiene la renta promedio por hora 
+agrupacion <-lectura %>% group_by(weathersit) %>% summarise(Total= sum(cnt), Total_Hora = n(), 
+                                                            Promedio_Hora =  sum(cnt) /n() )
+agrupacion
+
+```
+
+
+12. Muestre una gráfica de la densidad por hora.
+
+```{r}
+
+lectura %>%
+  ggplot (aes(x=hr, y=..density..))+
+  geom_density(col='blue', lwd=1, fill ="cyan")+
+  theme_minimal()
+
+```  
+
+
+13. Muestre una gráfica de barras por día del mes como eje x y la
+cantidad total de alquileres como el eje Y.
+
+```{r}
+
+library(ggplot2)
+Data <- lectura %>% filter(yr==1, mnth==5)
+
+
+agrupacionAA <- Data %>% group_by(dteday) %>% summarise(Total=sum(cnt))
+str(agrupacionAA)
+
+
+
+ggplot(agrupacionAA, aes(dteday, Total)) + geom_bar(stat='identity')
+
+
+
+
+```
+
+
+14. Muestre una serie temporal (gráfica) con el tiempo (mes-dia-año)
+como eje de tiempo y la cantidad de alquieleres como ejer Y.
+
+
+```{r}
+library(lubridate)
+
+
+AgrupacionA <- lectura %>%  group_by(dteday) %>% summarise(Total =sum(cnt))
+AgrupacionA
+
+AgrupcionFe <- Agrupacion %>% mutate(
+  Fecha =  as.Date(dteday, format="%Y-%m-%d") 
+)
